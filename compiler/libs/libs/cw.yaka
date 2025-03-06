@@ -1,0 +1,532 @@
+import libs.c
+
+CW_VERSION_MAJOR: Const[int] = ccode "CIVETWEB_VERSION_MAJOR"
+CW_VERSION_MINOR: Const[int] = ccode "CIVETWEB_VERSION_MINOR"
+CW_VERSION_PATCH: Const[int] = ccode "CIVETWEB_VERSION_PATCH"
+
+MG_FEATURES_DEFAULT: Const[int] = 0x0
+MG_FEATURES_FILES: Const[int] = 0x1
+# Support files from local directories
+# Will only work, if NO_FILES is not set.
+MG_FEATURES_TLS: Const[int] = 0x2
+# Support transport layer security (TLS).
+# SSL is still often used synonymously for TLS.
+# Will only work, if NO_SSL is not set.
+MG_FEATURES_SSL: Const[int] = 0x2
+# Support transport layer security (TLS).
+# SSL is still often used synonymously for TLS.
+# Will only work, if NO_SSL is not set.
+MG_FEATURES_CGI: Const[int] = 0x4
+# Support common gateway interface (CGI).
+MG_FEATURES_IPV6: Const[int] = 0x8
+# Support IPv6
+# Will only work, if USE_IPV6 is set.
+MG_FEATURES_WEBSOCKET: Const[int] = 0x10
+# Support WebSocket protocol
+# Will only work, if USE_WEBSOCKET is set.
+MG_FEATURES_LUA: Const[int] = 0x20
+# Support server side Lua scripting
+# Will only work, if USE_LUA is set.
+MG_FEATURES_SSJS: Const[int] = 0x40
+# Support server side JavaScript scripting
+# Will only work, if USE_DUKTAPE is set.
+MG_FEATURES_CACHE: Const[int] = 0x80
+# Provide data required for caching files
+# Will only work, if NO_CACHING is not set.
+MG_FEATURES_STATS: Const[int] = 0x100
+# Collect server status information
+# Will only work, if USE_SERVER_STATS is set.
+MG_FEATURES_COMPRESSION: Const[int] = 0x200
+# Support on-the-fly compression
+# Will only work, if USE_ZLIB is set.
+MG_FEATURES_HTTP2: Const[int] = 0x400
+# HTTP/2 support
+MG_FEATURES_X_DOMAIN_SOCKET: Const[int] = 0x800
+# Support unix domain sockets
+MG_FEATURES_ALL: Const[int] = 0xFFFF
+# Bit mask for all feature defines
+MG_CONFIG_TYPE_UNKNOWN: Const[int] = 0
+MG_CONFIG_TYPE_NUMBER: Const[int] = 1
+MG_CONFIG_TYPE_STRING: Const[int] = 2
+MG_CONFIG_TYPE_FILE: Const[int] = 3
+MG_CONFIG_TYPE_DIRECTORY: Const[int] = 4
+MG_CONFIG_TYPE_BOOLEAN: Const[int] = 5
+MG_CONFIG_TYPE_EXT_PATTERN: Const[int] = 6
+MG_CONFIG_TYPE_STRING_LIST: Const[int] = 7
+MG_CONFIG_TYPE_STRING_MULTILINE: Const[int] = 8
+MG_CONFIG_TYPE_YES_NO_OPTIONAL: Const[int] = 9
+MG_WEBSOCKET_OPCODE_CONTINUATION: Const[int] = 0
+MG_WEBSOCKET_OPCODE_TEXT: Const[int] = 1
+MG_WEBSOCKET_OPCODE_BINARY: Const[int] = 2
+MG_WEBSOCKET_OPCODE_CONNECTION_CLOSE: Const[int] = 8
+MG_WEBSOCKET_OPCODE_PING: Const[int] = 9
+MG_WEBSOCKET_OPCODE_PONG: Const[int] = 10
+MG_FORM_FIELD_STORAGE_SKIP: Const[int] = 0
+MG_FORM_FIELD_STORAGE_GET: Const[int] = 1
+MG_FORM_FIELD_STORAGE_STORE: Const[int] = 2
+MG_FORM_FIELD_STORAGE_ABORT: Const[int] = 16
+MG_FORM_FIELD_HANDLE_GET: Const[int] = 1
+MG_FORM_FIELD_HANDLE_NEXT: Const[int] = 8
+MG_FORM_FIELD_HANDLE_ABORT: Const[int] = 16
+MG_ERROR_DATA_CODE_OK: Const[int] = 0
+MG_ERROR_DATA_CODE_INVALID_PARAM: Const[int] = 1
+MG_ERROR_DATA_CODE_INVALID_OPTION: Const[int] = 2
+MG_ERROR_DATA_CODE_INIT_TLS_FAILED: Const[int] = 3
+MG_ERROR_DATA_CODE_MISSING_OPTION: Const[int] = 4
+MG_ERROR_DATA_CODE_DUPLICATE_DOMAIN: Const[int] = 5
+MG_ERROR_DATA_CODE_OUT_OF_MEMORY: Const[int] = 6
+MG_ERROR_DATA_CODE_SERVER_STOPPED: Const[int] = 7
+MG_ERROR_DATA_CODE_INIT_LIBRARY_FAILED: Const[int] = 8
+MG_ERROR_DATA_CODE_OS_ERROR: Const[int] = 9
+MG_ERROR_DATA_CODE_INIT_PORTS_FAILED: Const[int] = 10
+MG_ERROR_DATA_CODE_INIT_USER_FAILED: Const[int] = 11
+MG_ERROR_DATA_CODE_INIT_ACL_FAILED: Const[int] = 12
+MG_ERROR_DATA_CODE_INVALID_PASS_FILE: Const[int] = 13
+MG_ERROR_DATA_CODE_SCRIPT_ERROR: Const[int] = 14
+MG_ERROR_DATA_CODE_HOST_NOT_FOUND: Const[int] = 15
+MG_ERROR_DATA_CODE_CONNECT_TIMEOUT: Const[int] = 16
+MG_ERROR_DATA_CODE_CONNECT_FAILED: Const[int] = 17
+MG_ERROR_DATA_CODE_TLS_CLIENT_CERT_ERROR: Const[int] = 18
+MG_ERROR_DATA_CODE_TLS_SERVER_CERT_ERROR: Const[int] = 19
+MG_ERROR_DATA_CODE_TLS_CONNECT_ERROR: Const[int] = 20
+
+MAX_HEADERS: Const[int] = 64
+
+@nativedefine("mg_init_library")
+def init_library(features: int) -> int:
+    # Initialize this library. This should be called once before any other
+    # function from this library. This function is not guaranteed to be
+    # thread safe.
+    # 0 is returned on error. else the initialized features
+    pass
+
+@nativedefine("mg_exit_library")
+def exit_library() -> int:
+    # Un-initialize this library.
+    # 0 is returned on error.
+    pass
+
+@nativedefine("struct mg_header")
+struct Header:
+    name: Ptr[Const[c.CChar]]
+    value: Ptr[Const[c.CChar]]
+
+@nativedefine("struct mg_client_cert")
+struct ClientCert:
+    peer_cert: AnyPtr
+    subject: Ptr[Const[c.CChar]]
+    issuer: Ptr[Const[c.CChar]]
+    serial: Ptr[Const[c.CChar]]
+    finger: Ptr[Const[c.CChar]]
+
+@nativedefine("struct mg_request_info")
+struct RequestInfo:
+    request_method: Ptr[Const[c.CChar]]
+    # "GET", "POST", etc
+    request_uri: Ptr[Const[c.CChar]]
+    # URL-decoded URI (absolute or relative, as in the request)
+    local_uri_raw: Ptr[Const[c.CChar]]
+    # URL-decoded URI (relative). Can be NULL if the request_uri does not address a resource at the server host.
+    local_uri: Ptr[Const[c.CChar]]
+    # Same as local_uri_raw, however, cleaned so a path like allowed_dir/../forbidden_file is not possible.
+    http_version: Ptr[Const[c.CChar]]
+    # E.g. "1.0", "1.1"
+    query_string: Ptr[Const[c.CChar]]
+    # URL part after '?', not including '?', or NULL
+    remote_user: Ptr[Const[c.CChar]]
+    # Authenticated user, or NULL if no auth used
+    remote_addr: FixedArr[c.CChar,48]
+    # Client's IP address as a string.
+    content_length: c.CLongLong
+    # Length (in bytes) of the request body, can be -1 if no length was given.
+    remote_port: c.CInt
+    # Port at client side
+    server_port: c.CInt
+    # Port at server side (one of the listening ports)
+    is_ssl: c.CInt
+    # 1 if SSL/TLS used, 0 if not
+    user_data: AnyPtr
+    # User data tagged to request
+    conn_data: AnyPtr
+    # Connection-specific user data
+    num_headers: c.CInt
+    # Number of HTTP headers
+    http_headers: FixedArr[Header,64]
+    # HTTP headers fixed size array
+    client_cert: Ptr[ClientCert]
+    # Client certificate information
+    acceptedWebSocketSubprotocol: Ptr[Const[c.CChar]]
+    # websocket subprotocol, accepted during handshake
+
+@nativedefine("struct mg_response_info")
+struct ResponseInfo:
+    status_code: c.CInt
+    # Status code - E.g. 200
+    status_text: Ptr[Const[c.CChar]]
+    # Status text - E.g. "OK"
+    http_version: Ptr[Const[c.CChar]]
+    # HTTP version - E.g. "1.0", "1.1"
+    content_length: c.CLongLong
+    # Length (in bytes) of the request body, can be -1 if no length was given.
+    num_headers: c.CInt
+    # Number of HTTP headers
+    http_headers: FixedArr[Header,64]
+    # HTTP headers fixed size array
+
+# TODO add details to Callbacks structure
+
+@nativedefine("struct mg_callbacks")
+struct Callbacks:
+    pass
+
+
+@nativedefine("struct mg_websocket_subprotocols")
+struct WebsocketSubprotocols:
+    nb_subprotocols: c.CInt
+    subprotocols: Ptr[Ptr[Const[c.CChar]]]
+
+@nativedefine("struct mg_option")
+struct Option:
+    name: Ptr[Const[c.CChar]]
+    type: c.CInt
+    default_value: Ptr[Const[c.CChar]]
+
+@nativedefine("struct mg_server_port")
+struct ServerPort:
+    protocol: c.CInt
+    port: c.CInt
+    is_ssl: c.CInt
+    is_redirect: c.CInt
+    _reserved1: c.CInt
+    _reserved2: c.CInt
+    _reserved3: c.CInt
+    _reserved4: c.CInt
+
+# TODO fill form data handler structure
+@nativedefine("struct mg_form_data_handler")
+struct FormDataHandler:
+    pass
+
+# TODO fill match element access tools
+@nativedefine("struct mg_match_element")
+struct MatchElement:
+    pass
+
+@nativedefine("struct mg_match_context")
+struct MatchContext:
+    case_sensitive: c.CInt
+    num_matches: c.Size
+    match: FixedArr[MatchElement,32]
+
+@nativedefine("struct mg_client_options")
+struct ClientOptions:
+    host: Ptr[Const[c.CChar]]
+    port: c.CInt
+    client_cert: Ptr[Const[c.CChar]]
+    server_cert: Ptr[Const[c.CChar]]
+    host_name: Ptr[Const[c.CChar]]
+
+@nativedefine("struct mg_error_data")
+struct ErrorData:
+    code: c.CUInt
+    code_sub: c.CUInt
+    text: c.CStr
+    text_buffer_size: c.Size
+
+@nativedefine("struct mg_init_data")
+struct InitData:
+    callbacks: Ptr[Const[Callbacks]]
+    user_data: AnyPtr
+    configuration_options: Ptr[Ptr[Const[c.CChar]]]
+
+@nativemacro
+def init_library(features: c.CUInt) -> c.CUInt:
+    ccode """mg_init_library(nn__features)"""
+
+@nativemacro
+def exit_library() -> c.CUInt:
+    ccode """mg_exit_library()"""
+
+@nativemacro
+def start(callbacks: Ptr[Const[Callbacks]]) -> Ptr[Context]:
+    ccode """mg_start(nn__callbacks)"""
+
+@nativemacro
+def stop(ctx: Ptr[Context]) -> None:
+    ccode """mg_stop(nn__)"""
+
+@nativemacro
+def start_domain(ctx: Ptr[Context]) -> int:
+    ccode """mg_start_domain(nn__ctx)"""
+
+@nativemacro
+def set_request_handler(ctx: Ptr[Context]) -> None:
+    ccode """mg_set_request_handler(nn__ctx)"""
+
+@nativemacro
+def set_websocket_handler_with_subprotocols() -> None:
+    ccode """mg_set_websocket_handler_with_subprotocols()"""
+
+@nativemacro
+def set_auth_handler(ctx: Ptr[Context], uri: c.CStr) -> None:
+    ccode """mg_set_auth_handler(nn__ctx, nn__uri)"""
+
+@nativemacro
+def get_option(ctx: Ptr[Const[Context]]) -> c.CStr:
+    ccode """mg_get_option(nn__ctx)"""
+
+@nativemacro
+def get_user_data(ctx: Ptr[Const[Context]]) -> AnyPtr:
+    ccode """mg_get_user_data(nn__ctx)"""
+
+@nativemacro
+def get_user_context_data(conn: Ptr[Const[Connection]]) -> AnyPtr:
+    ccode """mg_get_user_context_data(nn__conn)"""
+
+@nativemacro
+def get_thread_pointer(conn: Ptr[Const[Connection]]) -> AnyPtr:
+    ccode """mg_get_thread_pointer(nn__conn)"""
+
+@nativemacro
+def set_user_connection_data(conn: Ptr[Const[Connection]]) -> None:
+    ccode """mg_set_user_connection_data(nn__conn)"""
+
+@nativemacro
+def get_request_link(conn: Ptr[Const[Connection]]) -> int:
+    ccode """mg_get_request_link(nn__conn)"""
+
+@nativemacro
+def get_valid_options() -> Ptr[Const[Option]]:
+    ccode """mg_get_valid_options()"""
+
+@nativemacro
+def get_server_ports(ctx: Ptr[Const[Context]], size: int) -> int:
+    ccode """mg_get_server_ports(nn__ctx, (int)nn__size)"""
+
+@nativemacro
+def modify_passwords_file(passwords_file_name: c.CStr) -> int:
+    ccode """mg_modify_passwords_file(nn__passwords_file_name)"""
+
+@nativemacro
+def modify_passwords_file_ha1(passwords_file_name: c.CStr) -> int:
+    ccode """mg_modify_passwords_file_ha1(nn__passwords_file_name)"""
+
+@nativemacro
+def write(p_: Ptr[Connection], buf: AnyPtrToConst, p_len: c.Size) -> int:
+    ccode """mg_write(nn__p_, nn__buf, nn__p_len)"""
+
+@nativemacro
+def websocket_write(conn: Ptr[Connection], opcode: int) -> int:
+    ccode """mg_websocket_write(nn__conn, (int)nn__opcode)"""
+
+@nativemacro
+def websocket_client_write(conn: Ptr[Connection]) -> int:
+    ccode """mg_websocket_client_write(nn__conn)"""
+
+@nativemacro
+def lock_connection(conn: Ptr[Connection]) -> None:
+    ccode """mg_lock_connection(nn__conn)"""
+
+@nativemacro
+def unlock_connection(conn: Ptr[Connection]) -> None:
+    ccode """mg_unlock_connection(nn__conn)"""
+
+@nativemacro
+def lock_context(ctx: Ptr[Context]) -> None:
+    ccode """mg_lock_context(nn__ctx)"""
+
+@nativemacro
+def unlock_context(ctx: Ptr[Context]) -> None:
+    ccode """mg_unlock_context(nn__ctx)"""
+
+@nativemacro
+def printf(p_: Ptr[Connection]) -> int:
+    ccode """mg_printf(nn__p_)"""
+
+@nativemacro
+def send_chunk(conn: Ptr[Connection], chunk: c.CStr) -> int:
+    ccode """mg_send_chunk(nn__conn, nn__chunk)"""
+
+@nativemacro
+def send_file(conn: Ptr[Connection], path: c.CStr) -> None:
+    ccode """mg_send_file(nn__conn, nn__path)"""
+
+@nativemacro
+def send_file_body(conn: Ptr[Connection]) -> int:
+    ccode """mg_send_file_body(nn__conn)"""
+
+@nativemacro
+def send_http_error(conn: Ptr[Connection], status_code: int) -> int:
+    ccode """mg_send_http_error(nn__conn, (int)nn__status_code)"""
+
+@nativemacro
+def send_http_ok(conn: Ptr[Connection]) -> int:
+    ccode """mg_send_http_ok(nn__conn)"""
+
+@nativemacro
+def send_http_redirect(conn: Ptr[Connection]) -> int:
+    ccode """mg_send_http_redirect(nn__conn)"""
+
+@nativemacro
+def send_mime_file(conn: Ptr[Connection]) -> None:
+    ccode """mg_send_mime_file(nn__conn)"""
+
+@nativemacro
+def send_mime_file2(conn: Ptr[Connection]) -> None:
+    ccode """mg_send_mime_file2(nn__conn)"""
+
+@nativemacro
+def store_body(conn: Ptr[Connection]) -> c.CLongLong:
+    ccode """mg_store_body(nn__conn)"""
+
+@nativemacro
+def read(p_: Ptr[Connection], buf: AnyPtr, p_len: c.Size) -> int:
+    ccode """mg_read(nn__p_, nn__buf, nn__p_len)"""
+
+@nativemacro
+def get_header(p_: Ptr[Const[Connection]]) -> c.CStr:
+    ccode """mg_get_header(nn__p_)"""
+
+@nativemacro
+def get_var(data: c.CStr, data_len: c.Size) -> int:
+    ccode """mg_get_var(nn__data, nn__data_len)"""
+
+@nativemacro
+def get_var2(data: c.CStr, data_len: c.Size) -> int:
+    ccode """mg_get_var2(nn__data, nn__data_len)"""
+
+@nativemacro
+def split_form_urlencoded(data: c.CStr) -> int:
+    ccode """mg_split_form_urlencoded(nn__data)"""
+
+@nativemacro
+def get_cookie(cookie: c.CStr, var_name: c.CStr) -> int:
+    ccode """mg_get_cookie(nn__cookie, nn__var_name)"""
+
+@nativemacro
+def close_connection(conn: Ptr[Connection]) -> None:
+    ccode """mg_close_connection(nn__conn)"""
+
+@nativemacro
+def handle_form_request(conn: Ptr[Connection]) -> int:
+    ccode """mg_handle_form_request(nn__conn)"""
+
+# TODO fix this
+#@nativemacro
+#def start_thread(f: ?ANY?, p: AnyPtr) -> int:
+#    ccode """mg_start_thread(nn__f, nn__p)"""
+
+@nativemacro
+def get_builtin_mime_type(file_name: c.CStr) -> c.CStr:
+    ccode """mg_get_builtin_mime_type(nn__file_name)"""
+
+@nativemacro
+def version() -> c.CStr:
+    ccode """mg_version()"""
+
+@nativemacro
+def url_decode(src: c.CStr, src_len: int, dst: c.CStr) -> int:
+    ccode """mg_url_decode(nn__src, (int)nn__src_len, nn__dst)"""
+
+@nativemacro
+def url_encode(src: c.CStr, dst: c.CStr, dst_len: c.Size) -> int:
+    ccode """mg_url_encode(nn__src, nn__dst, nn__dst_len)"""
+
+@nativemacro
+def base64_encode(src: Ptr[Const[c.CUChar]], src_len: c.Size) -> int:
+    ccode """mg_base64_encode(nn__src, nn__src_len)"""
+
+@nativemacro
+def base64_decode(src: c.CStr, src_len: c.Size) -> int:
+    ccode """mg_base64_decode(nn__src, nn__src_len)"""
+
+# TODO fix this
+#@nativemacro
+#def md5(buf: FixedArr[c.CChar,33], args: ?ANY?) -> c.CStr:
+#    ccode """mg_md5(nn__buf, nn__args)"""
+
+@nativemacro
+def match(pat: c.CStr, p_str: c.CStr) -> i64:
+    ccode """mg_match(nn__pat, nn__p_str)"""
+
+@nativemacro
+def cry(conn: Ptr[Const[Connection]]) -> None:
+    ccode """mg_cry(nn__conn)"""
+
+@nativemacro
+def strcasecmp(s1: c.CStr, s2: c.CStr) -> int:
+    ccode """mg_strcasecmp(nn__s1, nn__s2)"""
+
+@nativemacro
+def strncasecmp(s1: c.CStr, s2: c.CStr, p_len: c.Size) -> int:
+    ccode """mg_strncasecmp(nn__s1, nn__s2, nn__p_len)"""
+
+@nativemacro
+def connect_websocket_client() -> Ptr[Connection]:
+    ccode """mg_connect_websocket_client()"""
+
+@nativemacro
+def connect_websocket_client_extensions() -> Ptr[Connection]:
+    ccode """mg_connect_websocket_client_extensions()"""
+
+@nativemacro
+def connect_client(host: c.CStr, port: int) -> Ptr[Connection]:
+    ccode """mg_connect_client(nn__host, (int)nn__port)"""
+
+@nativemacro
+def connect_websocket_client_secure() -> Ptr[Connection]:
+    ccode """mg_connect_websocket_client_secure()"""
+
+@nativemacro
+def get_response(conn: Ptr[Connection], ebuf: c.CStr) -> int:
+    ccode """mg_get_response(nn__conn, nn__ebuf)"""
+
+@nativemacro
+def response_header_start(conn: Ptr[Connection]) -> int:
+    ccode """mg_response_header_start(nn__conn)"""
+
+@nativemacro
+def response_header_add(conn: Ptr[Connection]) -> int:
+    ccode """mg_response_header_add(nn__conn)"""
+
+@nativemacro
+def response_header_add_lines(conn: Ptr[Connection]) -> int:
+    ccode """mg_response_header_add_lines(nn__conn)"""
+
+@nativemacro
+def response_header_send(conn: Ptr[Connection]) -> int:
+    ccode """mg_response_header_send(nn__conn)"""
+
+@nativemacro
+def check_feature(feature: c.CUInt) -> c.CUInt:
+    ccode """mg_check_feature(nn__feature)"""
+
+@nativemacro
+def get_system_info(buffer: c.CStr, buflen: int) -> int:
+    ccode """mg_get_system_info(nn__buffer, (int)nn__buflen)"""
+
+@nativemacro
+def get_context_info(ctx: Ptr[Const[Context]], buffer: c.CStr) -> int:
+    ccode """mg_get_context_info(nn__ctx, nn__buffer)"""
+
+@nativemacro
+def disable_connection_keep_alive(conn: Ptr[Connection]) -> None:
+    ccode """mg_disable_connection_keep_alive(nn__conn)"""
+
+@nativemacro
+def get_connection_info(ctx: Ptr[Const[Context]], idx: int) -> int:
+    ccode """mg_get_connection_info(nn__ctx, (int)nn__idx)"""
+
+@nativemacro
+def get_response2(conn: Ptr[Connection]) -> int:
+    ccode """mg_get_response2(nn__conn)"""
+
+@nativemacro
+def start2(init: Ptr[InitData]) -> Ptr[Context]:
+    ccode """mg_start2(nn__init)"""
+
+@nativemacro
+def start_domain2(ctx: Ptr[Context]) -> int:
+    ccode """mg_start_domain2(nn__ctx)"""
+
+# ---
